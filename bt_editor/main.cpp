@@ -28,7 +28,7 @@ main(int argc, char *argv[])
     qRegisterMetaType<AbsBehaviorTree>();
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Groot. The fancy BehaviorTree Editor");
+    parser.setApplicationDescription("Groot. The fancy BehaviorTree Editor, support multi-xml load and save");
     parser.addHelpOption();
 
     QCommandLineOption test_option(QStringList() << "t" << "test",
@@ -68,7 +68,7 @@ main(int argc, char *argv[])
         MainWindow win( GraphicMode::EDITOR );
         win.setWindowTitle("Groot");
         win.show();
-        win.loadFromXML( ":/crossdoor_with_subtree.xml" );
+        win.loadFromXML(":/crossdoor_with_subtree.xml", ":/crossdoor_with_subtree.xml" );
         return app.exec();
     }
     else{

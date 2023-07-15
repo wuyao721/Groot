@@ -49,7 +49,7 @@ void EditorTest::loadFile()
 {
     QString file_xml = readFile(":/crossdoor_with_subtree.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/crossdoor_with_subtree.xml", file_xml );
 
     QString saved_xml = main_win->saveToXML();
 
@@ -64,11 +64,11 @@ void EditorTest::loadFile()
     //-------------------------------
     // Compare AbsBehaviorTree
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/crossdoor_with_subtree.xml", file_xml );
     auto tree_A1 = getAbstractTree("MainTree");
     auto tree_A2 = getAbstractTree("DoorClosed");
 
-    main_win->loadFromXML( saved_xml );
+    main_win->loadFromXML(":/crossdoor_with_subtree.xml", saved_xml );
     auto tree_B1 = getAbstractTree("MainTree");
     auto tree_B2 = getAbstractTree("DoorClosed");
 
@@ -135,7 +135,7 @@ void EditorTest::savedFileSameAsOriginal()
 {
     QString file_xml = readFile(":/test_xml_key_reordering_issue.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/test_xml_key_reordering_issue.xml", file_xml );
 
     QString saved_xml = main_win->saveToXML();
 
@@ -152,12 +152,12 @@ void EditorTest::savedFileSameAsOriginal()
     // Compare AbsBehaviorTree
 
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/test_xml_key_reordering_issue.xml", file_xml );
     auto tree_A1 = getAbstractTree("BehaviorTree");
     auto tree_A2 = getAbstractTree("RunPlannerSubtree");
     auto tree_A3 = getAbstractTree("ExecutePath");
 
-    main_win->loadFromXML( saved_xml );
+    main_win->loadFromXML(":/test_xml_key_reordering_issue.xml", saved_xml );
     auto tree_B1 = getAbstractTree("BehaviorTree");
     auto tree_B2 = getAbstractTree("RunPlannerSubtree");
     auto tree_B3 = getAbstractTree("ExecutePath");
@@ -197,7 +197,7 @@ void EditorTest::loadFailed()
 {
     QString file_xml = readFile(":/crossdoor_with_subtree.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/test_xml_key_reordering_issue.xml", file_xml );
 
     auto tree_A1 = getAbstractTree("MainTree");
     auto tree_A2 = getAbstractTree("DoorClosed");
@@ -209,7 +209,7 @@ void EditorTest::loadFailed()
      testMessageBox(400, TEST_LOCATION(), [&]()
      {
          // should fail
-         main_win->loadFromXML( file_xml );
+         main_win->loadFromXML(":/test_xml_key_reordering_issue.xml", file_xml );
      });
 
      // nothing should change!
@@ -224,7 +224,7 @@ void EditorTest::undoRedo()
 {
     QString file_xml = readFile(":/show_all.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/show_all.xml", file_xml );
 
     //------------------------------------------
     AbsBehaviorTree abs_tree_A, abs_tree_B;
@@ -328,7 +328,7 @@ void EditorTest::renameTabs()
 {
     QString file_xml = readFile(":/crossdoor_with_subtree.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/crossdoor_with_subtree.xml", file_xml );
 
     testMessageBox(500, TEST_LOCATION(), [&]()
     {
@@ -357,7 +357,7 @@ void EditorTest::testSubtree()
 {
     QString file_xml = readFile(":/crossdoor_with_subtree.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/crossdoor_with_subtree.xml", file_xml );
 
     auto main_tree   = getAbstractTree("MainTree");
     auto closed_tree = getAbstractTree("DoorClosed");
@@ -432,7 +432,7 @@ void EditorTest::modifyCustomModel()
 {
     QString file_xml = readFile(":/crossdoor_with_subtree.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/crossdoor_with_subtree.xml", file_xml );
 
     QAbstractButton *button_lock = main_win->findChild<QAbstractButton*>("buttonLock");
     button_lock->setChecked(false);
@@ -469,7 +469,7 @@ void EditorTest::multipleSubtrees()
 {
     QString file_xml = readFile(":/test_subtrees_issue_8.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/test_subtrees_issue_8.xml", file_xml );
 
     auto abs_tree = getAbstractTree("MainTree");
 
@@ -493,7 +493,7 @@ void EditorTest::editText()
 {
     QString file_xml = readFile("://show_all.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML("://show_all.xml", file_xml );
 
     auto abs_tree = getAbstractTree();
 
@@ -537,7 +537,7 @@ void EditorTest::loadModelLess()
 {
     QString file_xml = readFile("://simple_without_model.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML("://simple_without_model.xml", file_xml );
 
     auto models = main_win->registeredModels();
 
@@ -555,7 +555,7 @@ void EditorTest::longNames()
 {
     QString file_xml = readFile(":/issue_24.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/issue_24.xml", file_xml );
 
     auto abs_tree = getAbstractTree();
     QCOMPARE( abs_tree.nodesCount(), size_t(4) );
@@ -572,11 +572,11 @@ void EditorTest::clearModels()
 {
     QString file_xml = readFile(":/crossdoor_with_subtree.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/crossdoor_with_subtree.xml", file_xml );
 
     file_xml = readFile(":/show_all.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/show_all.xml", file_xml );
 
     auto container = main_win->currentTabInfo();
    // auto view = container->view();
@@ -604,7 +604,7 @@ void EditorTest::undoWithSubtreeExpanded()
 {
     QString file_xml = readFile(":/crossdoor_with_subtree.xml");
     main_win->on_actionClear_triggered();
-    main_win->loadFromXML( file_xml );
+    main_win->loadFromXML(":/crossdoor_with_subtree.xml", file_xml );
 
     auto abs_tree = getAbstractTree("MainTree");
     auto subtree_node = abs_tree.findFirstNode("DoorClosed")->graphic_node;

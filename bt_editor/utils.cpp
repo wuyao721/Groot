@@ -567,6 +567,28 @@ std::set<QString> GetModelsToRemove(QWidget* parent,
     return prev_custom_models;
 }
 
+std::set<QString> GetModels(QWidget* parent,
+                                    NodeModels& prev_models,
+                                    const NodeModels& new_models)
+{
+    std::set<QString> prev_custom_models;
+
+    if( prev_models.size() > BuiltinNodeModels().size() )
+    {
+        for(const auto& it: prev_models)
+        {
+            const QString& model_name = it.first;
+            if( BuiltinNodeModels().count(model_name) == 0 &&
+                new_models.count(model_name) == 0)
+            {
+                prev_custom_models.insert( model_name );
+            }
+        }
+    }
+
+    return prev_custom_models;
+}
+
 BT::NodeType convert(Serialization::NodeType type)
 {
     switch (type)

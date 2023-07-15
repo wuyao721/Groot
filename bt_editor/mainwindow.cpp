@@ -295,7 +295,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::loadFromXML(const QString& xml_text)
+void MainWindow::loadFromXML(const QString& fileName, const QString& xml_text)
 {
     QDomDocument document;
     try{
@@ -341,9 +341,11 @@ void MainWindow::loadFromXML(const QString& xml_text)
     try {
         auto document_root = document.documentElement();
 
-        if( document_root.hasAttribute("main_tree_to_execute"))
-        {
-            _main_tree = document_root.attribute("main_tree_to_execute");
+        if(_main_tree.isEmpty()) {
+            if( document_root.hasAttribute("main_tree_to_execute"))
+            {
+                _main_tree = document_root.attribute("main_tree_to_execute");
+            }
         }
 
         auto custom_models = ReadTreeNodesModel( document_root );
@@ -355,9 +357,24 @@ void MainWindow::loadFromXML(const QString& xml_text)
 
         _editor_widget->updateTreeView();
 
-        onActionClearTriggered(false);
+        //onActionClearTriggered(false);
 
         const QSignalBlocker blocker( currentTabInfo() );
+
+        for (auto bt_root = document_root.firstChildElement("include");
+             !bt_root.isNull();
+             bt_root = bt_root.nextSiblingElement("include"))
+        {
+            QString tree_name("");
+            if( bt_root.hasAttribute("path") )
+            {
+                QString path = bt_root.attribute("path");
+                if( !path.isEmpty() )
+                {
+                    xmlInclude(fileName, path);
+                }
+            }
+        }
 
         for (auto bt_root = document_root.firstChildElement("BehaviorTree");
              !bt_root.isNull();
@@ -374,7 +391,7 @@ void MainWindow::loadFromXML(const QString& xml_text)
                     _main_tree = tree_name;
                 }
             }
-            onCreateAbsBehaviorTree(tree, tree_name);
+            onCreateAbsBehaviorTree(tree, tree_name, false);
         }
 
         if( !_main_tree.isEmpty() )
@@ -399,12 +416,24 @@ void MainWindow::loadFromXML(const QString& xml_text)
         else{
             currentTabInfo()->nodeReorder();
         }
-        auto models_to_remove = GetModelsToRemove(this, _treenode_models, custom_models);
 
-        for( QString model_name: models_to_remove )
-        {
-            onModelRemoveRequested(model_name);
+#if 0
+        auto models_to_remove = GetModels(this, _treenode_models, custom_models);
+        if (models_to_remove.size() > 0) {
+            QMessageBox messageBox;
+            messageBox.warning(this,"Found model in the file and also in the palette",
+                                "Found model in the file are also present in the palette. "
+                                "You can remove them from the palette and then load the "
+                                "file. This is to avoid confusion in case the "
+                                "models have been modified in the file.",
+                                QMessageBox::Ok);
+            messageBox.show();
         }
+#endif
+        //for( QString model_name: models_to_remove )
+        //{
+        //    onModelRemoveRequested(model_name);
+        //}
     }
     catch (std::exception& err) {
         error = true;
@@ -456,8 +485,159 @@ void MainWindow::on_actionLoad_triggered()
     while (!in.atEnd()) {
         xml_text += in.readLine();
     }
+    onActionClearTriggered(false);
+    _main_tree = ""; // reset _main_tree
+    loadFromXML(fileName, xml_text);
+}
 
-    loadFromXML(xml_text);
+void MainWindow::xmlInclude(const QString& fatherFileName, const QString& fileName2)
+{
+    //QSettings settings;
+    //QString directory_path  = settings.value("MainWindow.lastLoadDirectory",
+    //                                        QDir::homePath() ).toString();
+    //QString fileName = directory_path + "/" + fileName2;
+    QString directory_path = QFileInfo(fatherFileName).absolutePath();
+    QDir dir(directory_path);
+    QString fileName = dir.filePath(fileName2);
+    if (!QFileInfo::exists(fileName)){ // TODO: check if it is a valid file
+        std::cout << "File does not exist: " << fileName.toStdString() << std::endl;
+        return;
+    }
+
+    QFile file(fileName);
+
+    if (!file.open(QIODevice::ReadOnly)){
+        std::cout << "File open fail" << std::endl;
+        return;
+    }
+
+    QString xml_text;
+
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        xml_text += in.readLine();
+    }
+
+    //std::cout << "xmlInclude load from xml: " << fileName.toStdString() << std::endl;
+    loadFromXML(fileName, xml_text);
+}
+
+void MainWindow::saveToXMLs(std::map<QString, QString>& xmls, QString &main, QString &model) const
+{
+    QDomDocument docMain;
+
+    QDomElement rootMain = docMain.createElement( "root" );
+    docMain.appendChild( rootMain );
+
+    if( _main_tree.isEmpty() == false)
+    {
+        rootMain.setAttribute("main_tree_to_execute", _main_tree.toStdString().c_str());
+    }
+    QDomElement ele = docMain.createElement("include");
+    ele.setAttribute("path", "model.xml");
+    rootMain.appendChild(ele);
+    //std::cout << "saveToXMLs _tab_info size: " << _tab_info.size() << std::endl;
+    for (auto& it: _tab_info)
+    {
+        //it.first;
+        auto& container = it.second;
+        QString name = it.first;
+        xmls.insert( {name, saveSubtreeToXML(name, container)} );
+
+        QDomElement ele = docMain.createElement("include");
+        QString path = name + ".xml";
+        ele.setAttribute("path", path.toStdString().c_str());
+        rootMain.appendChild(ele);
+        //std::cout << "saveToXMLs: " << name.toStdString() << std::endl;
+        //xmls.insert( {name, saveSubtreeToXML(name, container)} );
+    }
+    //std::cout << "saveToXMLs _tab_info size: " << _tab_info.size() << std::endl;
+
+    main = xmlDocumentToString(docMain);
+    model = saveModelToXML();
+}
+
+QString MainWindow::saveModelToXML() const
+{
+    QDomDocument doc;
+
+    const char* COMMENT_SEPARATOR = " ////////// ";
+
+    QDomElement root = doc.createElement( "root" );
+    doc.appendChild( root );
+
+    QDomElement root_models = doc.createElement("TreeNodesModel");
+
+    for(const auto& tree_it: _treenode_models)
+    {
+        const auto& ID    = tree_it.first;
+        const auto& model = tree_it.second;
+
+        if( BuiltinNodeModels().count(ID) != 0 )
+        {
+            continue;
+        }
+
+        QDomElement node = doc.createElement( QString::fromStdString(toStr(model.type)) );
+
+        if( !node.isNull() )
+        {
+            node.setAttribute("ID", ID);
+
+            for(const auto& port_it: model.ports)
+            {
+                const auto& port_name = port_it.first;
+                const auto& port = port_it.second;
+
+                QDomElement port_element = writePortModel(port_name, port, doc);
+                node.appendChild( port_element );
+            }
+        }
+        root_models.appendChild(node);
+    }
+    root.appendChild(root_models);
+    root.appendChild( doc.createComment(COMMENT_SEPARATOR) );
+
+    return xmlDocumentToString(doc);
+}
+
+QString MainWindow::saveSubtreeToXML(QString& name, GraphicContainer* container) const
+{
+    QDomDocument doc;
+
+    const char* COMMENT_SEPARATOR = " ////////// ";
+
+    QDomElement root = doc.createElement( "root" );
+    doc.appendChild( root );
+
+    root.setAttribute("main_tree_to_execute", name.toStdString().c_str());
+
+    if (true)
+    {
+        //auto& container = it.second;
+        auto  scene = container->scene();
+
+        auto abs_tree = BuildTreeFromScene(container->scene());
+        auto abs_root = abs_tree.rootNode();
+        if( abs_root->children_index.size() == 1 &&
+            abs_root->model.registration_ID == "Root"  )
+        {
+            // mofe to the child of ROOT
+            abs_root = abs_tree.node( abs_root->children_index.front() );
+        }
+
+        QtNodes::Node* root_node = abs_root->graphic_node;
+
+        root.appendChild( doc.createComment(COMMENT_SEPARATOR) );
+        QDomElement root_element = doc.createElement("BehaviorTree");
+
+        root_element.setAttribute("ID", name.toStdString().c_str());
+        root.appendChild(root_element);
+
+        RecursivelyCreateXml(*scene, doc, root_element, root_node );
+    }
+    root.appendChild( doc.createComment(COMMENT_SEPARATOR) );
+    return xmlDocumentToString(doc);
 }
 
 QString MainWindow::saveToXML() const
@@ -665,6 +845,79 @@ void MainWindow::on_actionSave_triggered()
     {
         fileName += ".xml";
     }
+    directory_path = QFileInfo(fileName).absolutePath();
+    settings.setValue("MainWindow.lastSaveDirectory", directory_path);
+
+    QDir dir(directory_path); 
+    std::map<QString, QString> vec;
+    QString main;
+    QString model;
+    saveToXMLs(vec, main, model);
+    {
+        QFile file(fileName);
+        if (file.open(QIODevice::WriteOnly)) {
+            QTextStream stream(&file);
+            stream << main;
+        }
+    }
+
+    //std::cout << "on_actionSave_triggered vec size: " << vec.size() << std::endl;
+    for (auto iter = vec.begin(); iter != vec.end(); iter++) {
+        //std::cout << "on_actionSave_triggered file: " << iter->first.toStdString() << std::endl;
+        auto fileName = dir.filePath(iter->first);
+        if (!fileName.endsWith(".xml"))
+        {
+            fileName += ".xml";
+        }
+        QFile file(fileName);
+        if (file.open(QIODevice::WriteOnly)) {
+            QTextStream stream(&file);
+            stream << iter->second;
+        }
+    }
+    {
+        auto fileName = dir.filePath("model.xml");
+        QFile file(fileName);
+        if (file.open(QIODevice::WriteOnly)) {
+            QTextStream stream(&file);
+            stream << model;
+        }
+    }
+}
+
+#if 0
+void MainWindow::on_actionSave_triggered_old()
+{
+    for (auto& it: _tab_info)
+    {
+        auto& container = it.second;
+        if( !container->containsValidTree() )
+        {
+            QMessageBox::warning(this, tr("Oops!"),
+                                 tr("Malformed behavior tree. File can not be saved"),
+                                 QMessageBox::Cancel);
+            return;
+        }
+    }
+
+    if( _tab_info.size() == 1 )
+    {
+        _main_tree = _tab_info.begin()->first;
+    }
+
+    QSettings settings;
+    QString directory_path  = settings.value("MainWindow.lastSaveDirectory",
+                                            QDir::currentPath() ).toString();
+
+    auto fileName = QFileDialog::getSaveFileName(this, "Save BehaviorTree to file",
+                                                 directory_path, "BehaviorTree files (*.xml)");
+    if (fileName.isEmpty()){
+        return;
+    }
+    if (!fileName.endsWith(".xml"))
+    {
+        fileName += ".xml";
+    }
 
     QString xml_text = saveToXML();
 
@@ -677,6 +930,7 @@ void MainWindow::on_actionSave_triggered()
     directory_path = QFileInfo(fileName).absolutePath();
     settings.setValue("MainWindow.lastSaveDirectory", directory_path);
 }
+#endif
 
 void MainWindow::onAutoArrange()
 {

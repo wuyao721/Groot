@@ -51,9 +51,13 @@ public:
                         QWidget *parent = nullptr);
     ~MainWindow() override;
 
-    void loadFromXML(const QString &xml_text);
+    void loadFromXML(const QString& fileName, const QString &xml_text);
+    void xmlInclude(const QString& fatherFileName, const QString& fileName2);
 
     QString saveToXML() const ;
+    QString saveModelToXML() const ;
+    void saveToXMLs(std::map<QString, QString>& xmls, QString &main, QString &model) const ;
+    QString saveSubtreeToXML(QString& name, GraphicContainer* container) const;
 
     GraphicContainer* currentTabInfo();
 
