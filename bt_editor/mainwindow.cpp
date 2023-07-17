@@ -1210,7 +1210,7 @@ void MainWindow::onAddToModelRegistry(const NodeModel &model)
 
     _model_registry->registerModel( QString::fromStdString( toStr(model.type)), node_creator, ID);
 
-    //_treenode_models.insert( {ID, model } );
+    _treenode_models.insert( {ID, model } );
     _editor_widget->updateTreeView();
 }
 
