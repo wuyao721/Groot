@@ -154,7 +154,7 @@ endif()
 
 QT5_WRAP_UI(FORMS_HEADERS ${FORMS_UI})
 
-add_library(behavior_tree_editor SHARED
+add_library(behavior_tree_editor STATIC
     ${APP_CPPS}
     ${FORMS_HEADERS}
 )

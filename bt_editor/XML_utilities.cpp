@@ -81,9 +81,9 @@ NodeModel buildTreeNodeModelFromXML(const QDomElement& node)
 
 //------------------------------------------------------------------
 
-NodeModels ReadTreeNodesModel(const QDomElement &root)
+NodeModels ReadTreeNodesModel(const QDomElement &root, NodeModels &models)
 {
-    NodeModels models;
+    NodeModels models2;
     using QtNodes::DataModelRegistry;
 
     auto model_root = root.firstChildElement("TreeNodesModel");
@@ -95,7 +95,13 @@ NodeModels ReadTreeNodesModel(const QDomElement &root)
              node = node.nextSiblingElement() )
         {
             auto model = buildTreeNodeModelFromXML(node);
-            models.insert( {model.registration_ID, model} );
+            if( model.type != NodeType::UNDEFINED &&
+                model.registration_ID.isEmpty() == false &&
+                models.count(model.registration_ID) == 0)
+            {
+                models.insert( {model.registration_ID, model} );
+                models2.insert( {model.registration_ID, model} );
+            }
         }
     }
 
@@ -108,6 +114,7 @@ NodeModels ReadTreeNodesModel(const QDomElement &root)
             models.count(model.registration_ID) == 0)
         {
             models.insert( {model.registration_ID, model} );
+            models2.insert( {model.registration_ID, model} );
         }
 
         for( QDomElement child = node.firstChildElement();
@@ -129,7 +136,7 @@ NodeModels ReadTreeNodesModel(const QDomElement &root)
         }
         recursiveStep( bt_root.firstChildElement() );
     }
-    return models;
+    return models2;
 }
 
 

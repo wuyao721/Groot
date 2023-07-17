@@ -10,7 +10,7 @@
 #include <nodes/DataModelRegistry>
 
 
-NodeModels ReadTreeNodesModel(const QDomElement& root);
+NodeModels ReadTreeNodesModel(const QDomElement& root, NodeModels &models);
 
 void RecursivelyCreateXml(const QtNodes::FlowScene &scene,
                           QDomDocument& doc,
