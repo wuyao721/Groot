@@ -407,7 +407,7 @@ void MainWindow::loadFromXML(const QString& fileName, const QString& xml_text)
                 }
             }
         }
-
+#if 0
         if( currentTabInfo() == nullptr)
         {
             createTab("BehaviorTree");
@@ -416,7 +416,12 @@ void MainWindow::loadFromXML(const QString& fileName, const QString& xml_text)
         else{
             currentTabInfo()->nodeReorder();
         }
-
+#else
+        if( currentTabInfo())
+        {
+            currentTabInfo()->nodeReorder();
+        }
+#endif
 #if 0
         auto models_to_remove = GetModels(this, _treenode_models, custom_models);
         if (models_to_remove.size() > 0) {
@@ -450,8 +455,10 @@ void MainWindow::loadFromXML(const QString& fileName, const QString& xml_text)
                              QMessageBox::Ok);
     }
     else{
-        onSceneChanged();
-        onPushUndo();
+        if (currentTabInfo()) {
+            onSceneChanged();
+            onPushUndo();
+        }
     }
 }
 
