@@ -28,7 +28,7 @@ main(int argc, char *argv[])
     qRegisterMetaType<AbsBehaviorTree>();
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Groot. The fancy BehaviorTree Editor, support multi-xml load and save");
+    parser.setApplicationDescription("Groot. The fancy BehaviorTree Editor, support multi-xml load and save, v1.2.0");
     parser.addHelpOption();
 
     QCommandLineOption test_option(QStringList() << "t" << "test",

@@ -57,7 +57,7 @@ public:
     QString saveToXML() const ;
     QString saveModelToXML() const ;
     void saveToXMLs(std::map<QString, QString>& xmls, QString &main, QString &model) const ;
-    QString saveSubtreeToXML(QString& name, GraphicContainer* container) const;
+    QString saveSubtreeToXML(const QString& name, GraphicContainer* container) const;
 
     GraphicContainer* currentTabInfo();
 

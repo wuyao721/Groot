@@ -391,7 +391,11 @@ void MainWindow::loadFromXML(const QString& fileName, const QString& xml_text)
                     _main_tree = tree_name;
                 }
             }
-            onCreateAbsBehaviorTree(tree, tree_name, false);
+            QFileInfo fileInfo(fileName);
+            QString baseName = fileInfo.baseName();
+            onCreateAbsBehaviorTree(tree, baseName, false);
+            auto container = getTabByName(baseName);
+            container->setSubTreeName(tree_name); // 设置tag对应的子树名称
         }
 
         if( !_main_tree.isEmpty() )
@@ -549,7 +553,11 @@ void MainWindow::saveToXMLs(std::map<QString, QString>& xmls, QString &main, QSt
         //it.first;
         auto& container = it.second;
         QString name = it.first;
-        xmls.insert( {name, saveSubtreeToXML(name, container)} );
+        if (it.second->getSubTreeName().isEmpty()) {
+            xmls.insert( {name, saveSubtreeToXML(name, container)} );
+        } else {
+            xmls.insert( {name, saveSubtreeToXML(it.second->getSubTreeName(), container)} );
+        }
 
         QDomElement ele = docMain.createElement("include");
         QString path = name + ".xml";
@@ -608,7 +616,7 @@ QString MainWindow::saveModelToXML() const
     return xmlDocumentToString(doc);
 }
 
-QString MainWindow::saveSubtreeToXML(QString& name, GraphicContainer* container) const
+QString MainWindow::saveSubtreeToXML(const QString& name, GraphicContainer* container) const
 {
     QDomDocument doc;
 
@@ -998,7 +1006,21 @@ GraphicContainer* MainWindow::currentTabInfo()
 GraphicContainer *MainWindow::getTabByName(const QString &tab_name)
 {
     auto it = _tab_info.find( tab_name );
-    return (it != _tab_info.end()) ? (it->second) : nullptr;
+    if (it != _tab_info.end()) {
+        return it->second;
+    }
+
+    std::cout << "xxx tab_name: " << tab_name.toStdString() << std::endl;
+    // 看看是否记录了子树的名称
+    for (auto iter = _tab_info.begin(); iter != _tab_info.end(); iter++)
+    {
+        //std::cout << "iter first: " << iter->first.toStdString() << " getSubTreeName: " << iter->second->getSubTreeName() << std::endl;
+        if (iter->second->getSubTreeName() == tab_name) {
+            return iter->second;
+        }
+    }
+
+    return nullptr;
 }
 
 
@@ -1352,9 +1374,20 @@ QtNodes::Node* MainWindow::subTreeExpand(GraphicContainer &container,
     auto subtree_model = dynamic_cast<SubtreeNodeModel*>(node.nodeDataModel());
     const QString& subtree_name = subtree_model->registrationName();
 
+    //std::cout << "treeexpand, subtree_name " << subtree_name.toStdString() << std::endl;
     if( option == SUBTREE_EXPAND && subtree_model->expanded() == false)
     {
         auto subtree_container = getTabByName(subtree_name);
+
+        // 如果标签名称和树的名称不一样，通过树名称找标签名称
+        if (!subtree_container) {
+            for (auto& it : _tab_info) {
+                //std::cout << "treeexpand2, second->getSubTreeName() " << it.second->getSubTreeName() << std::endl;
+                if (it.second->getSubTreeName() == subtree_name) {
+                    subtree_container = it.second;
+                }
+            }
+        }        
         if (!subtree_container) {
             QMessageBox::warning(this, tr("Oops!"),
                                  tr("Couldn't get SubTree name from tabs and therefore can't expand."),

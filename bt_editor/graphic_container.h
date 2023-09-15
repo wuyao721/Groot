@@ -57,6 +57,11 @@ public:
 
     void createSubtree(QtNodes::Node& root_node, QString subtree_name = QString());
 
+    void setSubTreeName(const QString& name) {
+        _sub_tree_name = name;
+    }
+    const QString &getSubTreeName() { return _sub_tree_name; }
+
 public slots:
 
     void onNodeDoubleClicked(QtNodes::Node& root_node);
@@ -99,7 +104,7 @@ private:
    std::shared_ptr<QtNodes::DataModelRegistry> _model_registry;
 
    bool _signal_was_blocked;
-
+   QString _sub_tree_name; // 如果存在，说明子树的名称和tag的名称不一样
 };
 
 #endif // GRAPHIC_CONTAINER_H
